@@ -55,6 +55,7 @@ export interface Projectile extends Entity {
   startY?: number;
   targetX?: number;
   targetY?: number;
+  chain?: {x: number, y: number}[];
 }
 
 export interface ExpGem extends Entity {
@@ -110,6 +111,10 @@ export interface GameState {
     level: number;
     coins: number;
     kills: number;
+  };
+  spawnTimers: {
+    monster: number;
+    obstacle: number;
   };
   level: {
     progress: number; // 0 to 1

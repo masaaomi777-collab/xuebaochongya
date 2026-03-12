@@ -126,6 +126,10 @@ function createInitialState(): GameState {
       coins: 0,
       kills: 0,
     },
+    spawnTimers: {
+      monster: 0,
+      obstacle: 0,
+    },
     level: {
       progress: 0,
       maxDistance: C.LEVEL_MAX_DISTANCE,
@@ -224,10 +228,18 @@ function updateGame(state: GameState, dt: number, joystick: Vector2) {
 
   // 5. Spawn World Entities
   if (!state.level.isAtCheckpoint && !state.fortress.isStuck) {
-    if (Math.random() < 0.007) {
+    state.spawnTimers.obstacle -= dt;
+    if (state.spawnTimers.obstacle <= 0) {
+      // 0.007 per frame at 60fps = 0.42 per second -> ~2.38s average
+      state.spawnTimers.obstacle = (1 / 0.42) * (0.5 + Math.random());
       spawnObstacle(state);
     }
-    if (Math.random() < 0.035) {
+
+    state.spawnTimers.monster -= dt;
+    if (state.spawnTimers.monster <= 0) {
+      // 0.035 per frame at 60fps = 2.1 per second -> ~0.47s average
+      // Increased by 50%: 2.1 * 1.5 = 3.15 per second -> ~0.31s average
+      state.spawnTimers.monster = (1 / 3.15) * (0.5 + Math.random());
       spawnMonster(state);
     }
   }
@@ -318,7 +330,7 @@ function spawnMonster(state: GameState) {
 
 function spawnCheckpointWave(state: GameState) {
   const isBoss = state.level.currentCheckpoint === state.level.checkpoints.length - 1;
-  const count = 20;
+  const count = 60; // Increased by 200% from 20
   for (let i = 0; i < count; i++) {
     const isFast = Math.random() > 0.5;
     state.monsters.push({
@@ -450,6 +462,16 @@ function updateProjectiles(state: GameState, dt: number) {
     // Scroll with world
     if (!state.fortress.isStuck && !state.level.isAtCheckpoint) {
       p.y -= state.fortress.speed * dt;
+      if (p.chain) {
+        for (const pt of p.chain) {
+          pt.y -= state.fortress.speed * dt;
+        }
+      }
+    }
+
+    if (p.type === 'laser') {
+      // Laser already dealt damage in updateWeapons, skip collision
+      continue;
     }
 
     let hit = false;
@@ -527,7 +549,7 @@ function updateWeapons(state: GameState, dt: number) {
         const maxT = w.isEvolved ? 999 : w.maxTargets!;
         for (let i = 0; i < maxT; i++) {
           let bestTarget = null;
-          let minDist = 150;
+          let minDist = 200; // Same as machine gun
           for (const m of state.monsters) {
             if (targets.includes(m)) continue;
             const dx = m.x - currentPos.x;
@@ -560,7 +582,7 @@ function updateWeapons(state: GameState, dt: number) {
             damage: 0,
             type: 'laser',
             life: 0.2, // Show for 0.2s
-            targetId: targets.map(t => t.id).join(','),
+            chain: [{ x: state.fortress.x, y: state.fortress.y }, ...targets.map(t => ({ x: t.x, y: t.y }))],
           });
         }
       }

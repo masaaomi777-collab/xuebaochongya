@@ -113,9 +113,21 @@ export default function Game() {
           ctx.font = `${p.radius * 3}px Arial`;
           ctx.fillText('☄️', 0, 0);
         } else if (p.type === 'laser') {
-          if (p.targetId) {
-             ctx.font = `30px Arial`;
-             ctx.fillText('⚡', 0, 0);
+          if (p.chain && p.chain.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(p.chain[0].x - p.x, p.chain[0].y - p.y);
+            for (let j = 1; j < p.chain.length; j++) {
+              ctx.lineTo(p.chain[j].x - p.x, p.chain[j].y - p.y);
+            }
+            ctx.strokeStyle = `rgba(0, 255, 255, ${p.life / 0.2})`;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Draw lightning bolts at each target
+            ctx.font = `20px Arial`;
+            for (let j = 1; j < p.chain.length; j++) {
+              ctx.fillText('⚡', p.chain[j].x - p.x, p.chain[j].y - p.y);
+            }
           }
         } else if (p.type === 'fireball') {
           ctx.font = `${p.radius * 2}px Arial`;
