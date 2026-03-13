@@ -386,9 +386,14 @@ function updateMonsters(state: GameState, dt: number) {
     const dy = targetEntity.y - m.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
+    let currentSpeed = m.speed;
+    if (m.y < state.fortress.y) {
+      currentSpeed += state.fortress.speed * 1.5;
+    }
+
     if (dist > targetEntity.radius + m.radius) {
-      m.x += (dx / dist) * m.speed * dt;
-      m.y += (dy / dist) * m.speed * dt;
+      m.x += (dx / dist) * currentSpeed * dt;
+      m.y += (dy / dist) * currentSpeed * dt;
     } else {
       // Attack
       m.attackTimer -= dt;
